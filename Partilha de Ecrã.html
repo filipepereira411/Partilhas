@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Partilha Ecrã">
+<meta name="theme-color" content="#0071e3">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%230071e3'/%3E%3Ctext x='50' y='66' font-size='50' text-anchor='middle' fill='white' font-family='sans-serif'%3E%F0%9F%94%97%3C/text%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%230071e3'/%3E%3Ctext x='50' y='66' font-size='50' text-anchor='middle' fill='white' font-family='sans-serif'%3E%F0%9F%94%97%3C/text%3E%3C/svg%3E">
+<title>Partilha de Ecrã</title>
+<style>
+  :root{
+    --bg:#f5f5f7; --surface:#fff; --text:#1d1d1f; --muted:#6e6e73;
+    --accent:#0071e3; --border:#d2d2d7; --ok:#1a9e4a;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#1c1c1e; --surface:#2c2c2e; --text:#f5f5f7; --muted:#9a9a9e;
+      --accent:#3b9dff; --border:#48484a; --ok:#32d158;
+      color-scheme: dark;
+    }
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    background:var(--bg); color:var(--text);
+    padding-top: env(safe-area-inset-top,0px); padding-bottom: env(safe-area-inset-bottom,0px);
+    min-height:100%;
+  }
+  .wrap{max-width:720px; margin:0 auto; padding:24px 20px 60px}
+  h1{font-size:1.4rem; margin:8px 0 4px}
+  p.sub{color:var(--muted); margin:0 0 24px; font-size:.95rem}
+  .card{background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:20px; margin-bottom:20px}
+  .tabs{display:flex; gap:8px; margin-bottom:20px}
+  .tab{flex:1; padding:10px; text-align:center; border-radius:10px; border:1px solid var(--border); cursor:pointer; background:var(--surface); color:var(--text); font-weight:600}
+  .tab.active{background:var(--accent); color:#fff; border-color:var(--accent)}
+  textarea{width:100%; min-height:80px; border-radius:10px; border:1px solid var(--border); background:var(--bg); color:var(--text); padding:10px; font-family:monospace; font-size:.8rem; resize:vertical}
+  button{background:var(--accent); color:#fff; border:none; border-radius:10px; padding:11px 18px; font-size:.95rem; font-weight:600; cursor:pointer; margin-top:10px}
+  button.secondary{background:transparent; color:var(--accent); border:1px solid var(--accent)}
+  button:disabled{opacity:.5; cursor:default}
+  video{width:100%; border-radius:12px; background:#000; margin-top:14px; display:none}
+  .status{display:flex; align-items:center; gap:8px; font-size:.85rem; color:var(--muted); margin-top:10px}
+  .dot{width:8px; height:8px; border-radius:50%; background:var(--muted)}
+  .dot.on{background:var(--ok)}
+  .notice{font-size:.82rem; color:var(--muted); line-height:1.5; border-top:1px solid var(--border); padding-top:14px; margin-top:6px}
+  .hidden{display:none !important}
+  label{font-size:.85rem; font-weight:600; display:block; margin:14px 0 6px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🔗 Partilha de Ecrã</h1>
+  <p class="sub">Ligação direta entre dois dispositivos. Nada passa por um servidor — só funciona se ambos os lados trocarem o código abaixo.</p>
+
+  <div class="tabs">
+    <div class="tab active" id="tabHost" onclick="switchTab('host')">Partilhar o meu ecrã</div>
+    <div class="tab" id="tabView" onclick="switchTab('view')">Ver ecrã de outro</div>
+  </div>
+
+  <!-- HOST -->
+  <div class="card" id="panelHost">
+    <button id="btnShare">Começar a partilhar o ecrã</button>
+    <div class="status"><span class="dot" id="hostDot"></span><span id="hostStatus">Inativo</span></div>
+    <video id="localVideo" autoplay muted playsinline></video>
+
+    <div id="hostStep2" class="hidden">
+      <label>1. Envia este código a quem vai ver o teu ecrã</label>
+      <textarea id="offerOut" readonly></textarea>
+      <button class="secondary" onclick="copyField('offerOut')">Copiar código</button>
+
+      <label>2. Cola aqui o código de resposta que ele te enviar</label>
+      <textarea id="answerIn" placeholder="Cola aqui..."></textarea>
+      <button id="btnConnectHost">Ligar</button>
+    </div>
+  </div>
+
+  <!-- VIEWER -->
+  <div class="card hidden" id="panelView">
+    <label>1. Cola aqui o código que recebeste</label>
+    <textarea id="offerIn" placeholder="Cola aqui..."></textarea>
+    <button id="btnGenAnswer">Gerar código de resposta</button>
+
+    <div id="viewStep2" class="hidden">
+      <label>2. Envia este código de volta</label>
+      <textarea id="answerOut" readonly></textarea>
+      <button class="secondary" onclick="copyField('answerOut')">Copiar código</button>
+    </div>
+
+    <div class="status"><span class="dot" id="viewDot"></span><span id="viewStatus">À espera de ligação</span></div>
+    <video id="remoteVideo" autoplay playsinline></video>
+  </div>
+
+  <div class="notice">
+    ⚠️ Esta ferramenta só partilha o ecrã — não controla o rato nem o teclado do outro dispositivo (os browsers não permitem isso por segurança). Quem partilha vê sempre, em permanência, um aviso do próprio sistema operativo a indicar que o ecrã está a ser partilhado, e pode parar a qualquer momento.
+  </div>
+</div>
+
+<script>
+const cfg = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
+let pc, localStream;
+
+function switchTab(t){
+  document.getElementById('tabHost').classList.toggle('active', t==='host');
+  document.getElementById('tabView').classList.toggle('active', t==='view');
+  document.getElementById('panelHost').classList.toggle('hidden', t!=='host');
+  document.getElementById('panelView').classList.toggle('hidden', t!=='view');
+}
+
+function copyField(id){
+  const el = document.getElementById(id);
+  el.select();
+  navigator.clipboard?.writeText(el.value).catch(()=>document.execCommand('copy'));
+}
+
+function waitIce(peer){
+  return new Promise(resolve=>{
+    if (peer.iceGatheringState === 'complete') return resolve();
+    peer.addEventListener('icegatheringstatechange', ()=>{
+      if (peer.iceGatheringState === 'complete') resolve();
+    });
+  });
+}
+
+// ---- HOST ----
+document.getElementById('btnShare').addEventListener('click', async ()=>{
+  try{
+    localStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
+  }catch(e){
+    document.getElementById('hostStatus').textContent = 'Partilha cancelada ou não autorizada.';
+    return;
+  }
+  const localVideo = document.getElementById('localVideo');
+  localVideo.srcObject = localStream;
+  localVideo.style.display = 'block';
+  document.getElementById('hostDot').classList.add('on');
+  document.getElementById('hostStatus').textContent = 'A partilhar o ecrã';
+
+  pc = new RTCPeerConnection(cfg);
+  localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+  localStream.getVideoTracks()[0].addEventListener('ended', ()=>{
+    document.getElementById('hostStatus').textContent = 'Partilha terminada';
+    document.getElementById('hostDot').classList.remove('on');
+  });
+
+  pc.addEventListener('connectionstatechange', ()=>{
+    if (pc.connectionState === 'connected'){
+      document.getElementById('hostStatus').textContent = 'Ligado — a transmitir';
+    }
+  });
+
+  const offer = await pc.createOffer();
+  await pc.setLocalDescription(offer);
+  await waitIce(pc);
+
+  document.getElementById('offerOut').value = btoa(JSON.stringify(pc.localDescription));
+  document.getElementById('hostStep2').classList.remove('hidden');
+  document.getElementById('btnShare').disabled = true;
+});
+
+document.getElementById('btnConnectHost').addEventListener('click', async ()=>{
+  const raw = document.getElementById('answerIn').value.trim();
+  if (!raw) return;
+  try{
+    const answer = JSON.parse(atob(raw));
+    await pc.setRemoteDescription(answer);
+    document.getElementById('hostStatus').textContent = 'A ligar...';
+  }catch(e){
+    alert('Código inválido. Confirma que copiaste o código completo.');
+  }
+});
+
+// ---- VIEWER ----
+document.getElementById('btnGenAnswer').addEventListener('click', async ()=>{
+  const raw = document.getElementById('offerIn').value.trim();
+  if (!raw) return;
+  let offer;
+  try{ offer = JSON.parse(atob(raw)); }
+  catch(e){ alert('Código inválido. Confirma que copiaste o código completo.'); return; }
+
+  pc = new RTCPeerConnection(cfg);
+  const remoteVideo = document.getElementById('remoteVideo');
+
+  pc.addEventListener('track', (ev)=>{
+    remoteVideo.srcObject = ev.streams[0];
+    remoteVideo.style.display = 'block';
+    document.getElementById('viewDot').classList.add('on');
+    document.getElementById('viewStatus').textContent = 'A receber o ecrã';
+  });
+
+  await pc.setRemoteDescription(offer);
+  const answer = await pc.createAnswer();
+  await pc.setLocalDescription(answer);
+  await waitIce(pc);
+
+  document.getElementById('answerOut').value = btoa(JSON.stringify(pc.localDescription));
+  document.getElementById('viewStep2').classList.remove('hidden');
+  document.getElementById('btnGenAnswer').disabled = true;
+});
+</script>
+</body>
+</html>
